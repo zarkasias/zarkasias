@@ -112,66 +112,50 @@ const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
 const fmt = (n) => n.toLocaleString("en-US");
 
 function render(data, t) {
-  const W = 840, H = 280, P = 28;
+  const W = 840, H = 112;
   const { current, longest } = streaks(data.days);
   const font = `font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"`;
 
-  // Stat row
+  // Stat row: no box or background, so it sits in the README like text.
   const stats = [
     [fmt(data.contributions), "contributions this year"],
     [fmt(data.commits), "commits"],
     [fmt(data.prs), "pull requests"],
-    [`${current}d`, `current streak · best ${longest}d`],
+    [`${current}d`, `streak · best ${longest}d`],
     [fmt(data.repos), "repositories"],
   ];
-  const colW = (W - P * 2) / stats.length;
+  const colW = W / stats.length;
   const statSvg = stats.map(([v, l], i) => `
-    <text x="${P + i * colW}" y="${P + 26}" fill="${t.text}" font-size="26" font-weight="600">${esc(v)}</text>
-    <text x="${P + i * colW}" y="${P + 46}" fill="${t.muted}" font-size="12">${esc(l)}</text>`).join("");
+    <text x="${i * colW}" y="26" fill="${t.text}" font-size="24" font-weight="600">${esc(v)}</text>
+    <text x="${i * colW}" y="46" fill="${t.muted}" font-size="12">${esc(l)}</text>`).join("");
 
-  // Contribution heatmap (last 52 weeks)
-  const days = data.days.slice(-364);
-  const cols = Math.ceil((days.length + new Date(days[0].date + "T00:00:00Z").getUTCDay()) / 7);
-  const step = (W - P * 2 + 3) / cols, cell = step - 3;
-  const max = Math.max(1, ...days.map((d) => d.contributionCount));
-  const firstDow = new Date(days[0].date + "T00:00:00Z").getUTCDay();
-  const hx = P, hy = P + 78;
-  const heat = days.map((d, i) => {
-    const idx = i + firstDow, col = Math.floor(idx / 7), row = idx % 7;
-    const c = d.contributionCount;
-    const fill = c === 0 ? t.empty : t.heat[Math.min(3, Math.floor((c / max) * 4))];
-    return `<rect x="${hx + col * step}" y="${hy + row * step}" width="${cell}" height="${cell}" rx="2" fill="${fill}"/>`;
-  }).join("");
-
-  // Languages: one stacked bar + legend, under the heatmap
+  // Languages: thin stacked bar + legend
   const entries = Object.entries(data.langs).sort((a, b) => b[1].size - a[1].size);
   const top = entries.slice(0, 5);
   const otherSize = entries.slice(5).reduce((s, [, v]) => s + v.size, 0);
   if (otherSize) top.push(["Other", { size: otherSize, color: t.muted }]);
   const total = top.reduce((s, [, v]) => s + v.size, 0) || 1;
-  const by = hy + 7 * step + 18, bw = W - P * 2;
-  let x = P;
+  const by = 70;
+  let x = 0;
   const bar = top.map(([, v]) => {
-    const w = (v.size / total) * bw;
-    const r = `<rect x="${x}" y="${by}" width="${Math.max(w - 2, 1)}" height="8" fill="${v.color}"/>`;
+    const w = (v.size / total) * W;
+    const r = `<rect x="${x}" y="${by}" width="${Math.max(w - 2, 1)}" height="6" fill="${v.color}"/>`;
     x += w; return r;
   }).join("");
-  let lx = P;
+  let lx = 0;
   const legend = top.map(([name, v]) => {
     const label = `${name} ${((v.size / total) * 100).toFixed(0)}%`;
-    const g = `<circle cx="${lx + 5}" cy="${by + 28}" r="5" fill="${v.color}"/>
-      <text x="${lx + 15}" y="${by + 32}" fill="${t.muted}" font-size="12">${esc(label)}</text>`;
-    lx += 26 + label.length * 6.8; return g;
+    const g = `<circle cx="${lx + 4}" cy="${by + 26}" r="4" fill="${v.color}"/>
+      <text x="${lx + 13}" y="${by + 30}" fill="${t.muted}" font-size="12">${esc(label)}</text>`;
+    lx += 30 + label.length * 6.9; return g;
   }).join("");
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" ${font}>
-  <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="10" fill="${t.bg}" stroke="${t.border}"/>
   ${statSvg}
-  <g>${heat}</g>
-  <text x="${W - P}" y="${by + 32}" text-anchor="end" fill="${t.muted}" font-size="12">on GitHub since ${data.since}</text>
-  <clipPath id="bar"><rect x="${P}" y="${by}" width="${bw}" height="8" rx="4"/></clipPath>
+  <clipPath id="bar"><rect x="0" y="${by}" width="${W}" height="6" rx="3"/></clipPath>
   <g clip-path="url(#bar)">${bar}</g>
   ${legend}
+  <text x="${W}" y="${by + 30}" text-anchor="end" fill="${t.muted}" font-size="12">on GitHub since ${data.since}</text>
 </svg>`.replace(/\n\s*\n/g, "\n");
 }
 
