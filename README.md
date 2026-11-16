@@ -7,6 +7,7 @@ I build and modernize websites and web apps with React, Next.js, and TypeScript.
 
 - [Useless Achievements](https://www.uselessachievements.com/) — A full-stack web app I built where users earn collectible achievements through daily challenges and browser games.
 - [Chambers Consulting](https://chambers-consulting.dev/) — Website modernization and front-end consulting.
+- [FNC Shoppe](https://www.fncshoppe.com/) — A storefront for handmade, one-of-a-kind tote bags, phone cases, notebooks, and journals.
 
 ## Activity
 
